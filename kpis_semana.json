@@ -1,0 +1,23 @@
+{
+  "ventas": 85396475.0,
+  "tx_total": 2631,
+  "tx_web": 92,
+  "mkt_tx": 0,
+  "tx_suc": 2539,
+  "cli_total": 2082,
+  "cli_web": 84,
+  "mkt_cli": 0,
+  "cli_suc": 1998,
+  "cli_nuevos": 0,
+  "pct_nuevos": 0.0,
+  "ltv": 0.0,
+  "ticket": 32458.0,
+  "tk_bol": 23842.0,
+  "n_bol": 2515,
+  "tk_fac": 236574.0,
+  "n_fac": 116,
+  "recompra": 0.0,
+  "semana_label": "27 al 3 de Mayo",
+  "lunes": "2026-04-27",
+  "domingo": "2026-05-03"
+}

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI Semanal — Sedúcete</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --pink: #FF99FF;
+    --pink-dark: #cc00cc;
+    --pink-light: #fff0ff;
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: #e8e6e0;
+    --text: #1a1a1a;
+    --muted: #888;
+    --green: #1e7e34;
+    --green-bg: #f0faf4;
+    --red: #b02020;
+    --red-bg: #fdf3f3;
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+  body { background: var(--bg); color: var(--text); font-family: Arial, Helvetica, sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* HEADER */
+  .app-header { background: var(--pink); padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .app-header h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px; }
+  .app-header .subtitle { font-size: 12px; color: var(--pink-dark); margin-top: 2px; }
+  .week-badge { background: rgba(0,0,0,0.1); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600; color: #1a1a1a; }
+
+  /* TABS */
+  .tabs { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; padding: 0 32px; }
+  .tab-btn { padding: 14px 18px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--muted); border-bottom: 3px solid transparent; font-weight: 500; transition: all 0.15s; }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--pink-dark); }
+  .tab-btn:hover { color: var(--text); }
+
+  /* MAIN */
+  .main { max-width: 900px; margin: 0 auto; padding: 28px 20px; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid var(--pink); }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  /* FORM ELEMENTS */
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number], input[type=date] {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; color: var(--text); background: var(--surface); outline: none; transition: border 0.15s;
+  }
+  input:focus { border-color: var(--pink-dark); }
+  .input-group { margin-bottom: 12px; }
+  .input-hint { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* UPLOAD ZONE */
+  .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .upload-zone:hover { border-color: var(--pink); background: var(--pink-light); }
+  .upload-zone.loaded { border-color: var(--green); background: var(--green-bg); border-style: solid; }
+  .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-label { font-size: 13px; color: var(--muted); }
+  .upload-fname { font-size: 12px; color: var(--green); font-weight: 600; margin-top: 4px; }
+
+  /* BUTTONS */
+  .btn { padding: 9px 18px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--text); font-weight: 500; transition: all 0.15s; }
+  .btn:hover { background: var(--bg); }
+  .btn-primary { background: var(--text); color: var(--surface); border-color: transparent; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-pink { background: var(--pink); color: #1a1a1a; border-color: transparent; font-weight: 700; }
+  .btn-pink:hover { opacity: 0.85; }
+  .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 10px; }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi-card { background: var(--bg); border-radius: 8px; padding: 14px 16px; }
+  .kpi-num { font-size: 10px; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+  .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* STATUS DOTS */
+  .status-list { list-style: none; }
+  .status-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .status-item:last-child { border-bottom: none; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .dot-ok { background: var(--green); }
+  .dot-empty { background: var(--border); }
+  .status-val { margin-left: auto; font-size: 12px; color: var(--muted); }
+
+  /* INSIGHT BOX */
+  .insight { padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 12px; line-height: 1.5; margin-bottom: 8px; }
+  .insight-green { background: var(--green-bg); border-left: 4px solid var(--green); }
+  .insight-red   { background: var(--red-bg); border-left: 4px solid var(--red); }
+  .insight-gray  { background: #f7f6f2; border-left: 4px solid #888; }
+
+  /* SECTION LABEL */
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); background: #eeeeeb; padding: 6px 10px; margin: 4px 0; border-radius: 4px; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* TOTALS ROW */
+  .total-row { background: #f5f4f0; font-weight: 600; border-radius: 6px; }
+  .total-row td { padding: 8px 10px !important; }
+
+  /* COPY BOX */
+  .copy-box { background: #1a1a1a; color: #ccc; padding: 14px 18px; border-radius: 8px; font-family: monospace; font-size: 12px; line-height: 1.6; position: relative; white-space: pre-wrap; }
+  .copy-btn { position: absolute; top: 10px; right: 10px; background: #444; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+  .copy-btn:hover { background: #666; }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .main { padding: 16px 12px; }
+    .app-header { padding: 16px 16px; }
+    .tabs { padding: 0 12px; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div>
+    <h1>KPI Semanal — Sedúcete</h1>
+    <div class="subtitle">Dashboard de cálculo y envío de reporte semanal</div>
+  </div>
+  <div class="week-badge" id="week-badge">—</div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('datos')">1 · Datos Bsale</button>
+  <button class="tab-btn" onclick="showTab('externos')">2 · Fuentes externas</button>
+  <button class="tab-btn" onclick="showTab('kpis')">3 · KPIs</button>
+  <button class="tab-btn" onclick="showTab('envio')">4 · Reporte</button>
+</div>
+
+<div class="main">
+
+<!-- ══ PANE 1: DATOS ══ -->
+<div class="pane active" id="pane-datos">
+
+  <div class="card">
+    <div class="card-title">Semana a analizar</div>
+    <div class="grid-2">
+      <div class="input-group">
+        <label>Lunes de la semana</label>
+        <input type="date" id="fecha-lunes" onchange="updateWeek()">
+      </div>
+      <div style="display:flex;align-items:center;padding-top:20px;">
+        <span id="week-display" style="font-size:13px;color:var(--muted);">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Opción A — Datos automáticos desde Bsale (recomendado)</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+      Corre el script Python cada lunes y carga el JSON que genera. El script se conecta a Bsale y calcula todos los KPIs automáticamente.
+    </p>
+    <div class="copy-box" id="cmd-box">python kpi_semanal.py --mkt-tx 0 --mkt-cli 0<button class="copy-btn" onclick="copyCmd()">Copiar</button></div>
+    <div style="margin-top:14px;">
+      <div class="upload-zone" id="zone-json" onclick="document.getElementById('file-json').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-label">Cargar kpis_semana.json generado por el script</div>
+        <div class="upload-fname" id="fname-json"></div>
+      </div>
+      <input type="file" id="file-json" accept=".json" style="display:none" onchange="loadJSON(this)">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Opción B — Subir archivos Excel/CSV manualmente</div>
+    <div class="grid-2" style="gap:16px;">
+      <div>
+        <div class="upload-zone" id="zone-bsale" onclick="document.getElementById('file-bsale').click()">
+          <div class="upload-icon">📊</div>
+          <div class="upload-label">Base Bsale — documentos de la semana</div>
+          <div class="input-hint">Tipo doc · Monto · RUT · Sucursal · Fecha</div>
+          <div class="upload-fname" id="fname-bsale"></div>
+        </div>
+        <input type="file" id="file-bsale" accept=".xlsx,.xls,.csv" style="display:none" onchange="markFile('bsale',this)">
+      </div>
+      <div>
+        <div class="upload-zone" id="zone-hist" onclick="document.getElementById('file-hist').click()">
+          <div class="upload-icon">👥</div>
+          <div class="upload-label">Base histórica de clientes (RUTs)</div>
+          <div class="input-hint">Para detectar clientes nuevos</div>
+          <div class="upload-fname" id="fname-hist"></div>
+        </div>
+        <input type="file" id="file-hist" accept=".xlsx,.xls,.csv" style="display:none" onchange="markFile('hist',this)">
+      </div>
+    </div>
+    <div style="margin-top:14px;" class="input-group">
+      <label>IDs de sucursales WEB en Bsale (separados por coma)</label>
+      <input type="text" id="web-ids" placeholder="Ej: 12, 15, 23, 31, 44, 51">
+    </div>
+  </div>
+
+  <div class="actions">
+    <div></div>
+    <button class="btn btn-primary" onclick="showTab('externos')">Siguiente →</button>
+  </div>
+</div>
+
+<!-- ══ PANE 2: EXTERNOS ══ -->
+<div class="pane" id="pane-externos">
+
+  <div class="card">
+    <div class="card-title">Marketplace (Google Sheets)</div>
+    <div class="grid-2">
+      <div class="input-group"><label>Transacciones Marketplace</label><input type="number" id="mkt-tx" placeholder="0" min="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Clientes únicos Marketplace</label><input type="number" id="mkt-cli" placeholder="0" min="0"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Google Analytics — Sesiones por web</div>
+    <div class="grid-3">
+      <div class="input-group"><label>Web 1</label><input type="number" id="ga1" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 2</label><input type="number" id="ga2" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 3</label><input type="number" id="ga3" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 4</label><input type="number" id="ga4" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 5</label><input type="number" id="ga5" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 6</label><input type="number" id="ga6" placeholder="0" oninput="updateTotals()"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;padding-top:10px;border-top:1px solid var(--border);">
+      <span style="color:var(--muted)">Total tráfico</span>
+      <span id="total-ga" style="font-weight:600;">0 sesiones</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Google Ads — Gasto en conversión ($)</div>
+    <div class="grid-3">
+      <div class="input-group"><label>Web 1</label><input type="number" id="gads1" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 2</label><input type="number" id="gads2" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 3</label><input type="number" id="gads3" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 4</label><input type="number" id="gads4" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 5</label><input type="number" id="gads5" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 6</label><input type="number" id="gads6" placeholder="0" oninput="updateTotals()"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Meta / Facebook Ads — Gasto en conversión ($)</div>
+    <div class="grid-3">
+      <div class="input-group"><label>Web 1</label><input type="number" id="meta1" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 2</label><input type="number" id="meta2" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 3</label><input type="number" id="meta3" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 4</label><input type="number" id="meta4" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 5</label><input type="number" id="meta5" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 6</label><input type="number" id="meta6" placeholder="0" oninput="updateTotals()"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Analytics — Ingreso directo web ($)</div>
+    <div class="grid-3">
+      <div class="input-group"><label>Web 1</label><input type="number" id="ing1" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 2</label><input type="number" id="ing2" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 3</label><input type="number" id="ing3" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 4</label><input type="number" id="ing4" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 5</label><input type="number" id="ing5" placeholder="0" oninput="updateTotals()"></div>
+      <div class="input-group"><label>Web 6</label><input type="number" id="ing6" placeholder="0" oninput="updateTotals()"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Instagram y suscriptores</div>
+    <div class="grid-3">
+      <div class="input-group"><label>Seguidores @seducete.cl</label><input type="number" id="ig-seg" placeholder="0"></div>
+      <div class="input-group"><label>Inscritos nuevos esta semana</label><input type="number" id="ins-nuevos" placeholder="0"></div>
+      <div class="input-group"><label>Inscritos total semana anterior</label><input type="number" id="ins-anterior" placeholder="0"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Guardar y programar envío</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+      Guarda todos los datos manuales en el Excel corporativo. El reporte se enviará automáticamente a las 17:00.
+    </p>
+    <button class="btn btn-pink" onclick="guardarDatos()" style="width:100%;padding:14px;font-size:15px;">
+      Guardar datos y programar envío
+    </button>
+    <div id="guardar-confirm" style="display:none;margin-top:12px;padding:12px 16px;background:#f0faf4;border-left:4px solid #1e7e34;border-radius:0 6px 6px 0;font-size:13px;color:#1e7e34;">
+      <strong>✅ datos_manuales.json descargado.</strong><br>
+      El script lo detectará en tu carpeta Descargas y lo importará al Excel automáticamente en unos segundos.
+      <br><span style="color:#555;font-size:12px;">Si el script no está corriendo, usa: <code>python kpi_semanal.py --importar datos_manuales.json</code></span>
+    </div>
+    <div id="guardar-error" style="display:none;margin-top:12px;padding:12px 16px;background:#fdf3f3;border-left:4px solid #b02020;border-radius:0 6px 6px 0;font-size:13px;color:#b02020;">
+      ❌ No se pudo descargar el archivo. Verifica que el navegador permita descargas.
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" onclick="showTab('datos')">← Atrás</button>
+    <button class="btn btn-pink" onclick="calcular()">Calcular KPIs →</button>
+  </div>
+</div>
+
+<!-- ══ PANE 3: KPIS ══ -->
+<div class="pane" id="pane-kpis">
+  <div id="kpi-empty" class="card" style="text-align:center;padding:40px;color:var(--muted);">
+    <div style="font-size:36px;margin-bottom:8px;">📊</div>
+    <div>Completa los pasos anteriores y presiona "Calcular KPIs"</div>
+  </div>
+  <div id="kpi-results" style="display:none;">
+
+    <div class="card">
+      <div class="card-title">Ventas y transacciones</div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-num">KPI 1</div><div class="kpi-label">Ventas totales</div><div class="kpi-value" id="k01">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 2</div><div class="kpi-label">Transacciones</div><div class="kpi-value" id="k02">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 13</div><div class="kpi-label">Ticket promedio</div><div class="kpi-value" id="k13">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 12</div><div class="kpi-label">LTV semanal</div><div class="kpi-value" id="k12">—</div></div>
+      </div>
+      <div class="grid-4">
+        <div class="kpi-card"><div class="kpi-num">KPI 15</div><div class="kpi-label">N° boletas</div><div class="kpi-value" id="k15">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 14</div><div class="kpi-label">Ticket boletas</div><div class="kpi-value" id="k14">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 17</div><div class="kpi-label">N° facturas</div><div class="kpi-value" id="k17">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 16</div><div class="kpi-label">Ticket facturas</div><div class="kpi-value" id="k16">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Canales</div>
+      <div class="section-label">Transacciones</div>
+      <div class="grid-3" style="margin:10px 0;">
+        <div class="kpi-card"><div class="kpi-label">Web</div><div class="kpi-value" id="k03w">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Marketplace</div><div class="kpi-value" id="k03m">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Sucursales</div><div class="kpi-value" id="k03s">—</div></div>
+      </div>
+      <div class="section-label">Clientes</div>
+      <div class="grid-3" style="margin:10px 0;">
+        <div class="kpi-card"><div class="kpi-label">Web</div><div class="kpi-value" id="k05w">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Marketplace</div><div class="kpi-value" id="k05m">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Sucursales</div><div class="kpi-value" id="k05s">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Clientes</div>
+      <div class="grid-4">
+        <div class="kpi-card"><div class="kpi-num">KPI 4</div><div class="kpi-label">Clientes totales</div><div class="kpi-value" id="k04">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 10</div><div class="kpi-label">Clientes nuevos</div><div class="kpi-value" id="k10">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 11</div><div class="kpi-label">% Clientes nuevos</div><div class="kpi-value" id="k11">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 20</div><div class="kpi-label">Recompra estimada</div><div class="kpi-value" id="k20">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Web y publicidad</div>
+      <div class="grid-4">
+        <div class="kpi-card"><div class="kpi-num">KPI 6</div><div class="kpi-label">Conversión web</div><div class="kpi-value" id="k06">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 7</div><div class="kpi-label">CAC web</div><div class="kpi-value" id="k07">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 8</div><div class="kpi-label">Presupuesto Ads</div><div class="kpi-value" id="k08">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 9</div><div class="kpi-label">Ingreso directo</div><div class="kpi-value" id="k09">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Comunidad</div>
+      <div class="grid-3">
+        <div class="kpi-card"><div class="kpi-num">KPI 18</div><div class="kpi-label">Seguidores IG</div><div class="kpi-value" id="k18">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 19</div><div class="kpi-label">Inscritos nuevos</div><div class="kpi-value" id="k19n">—</div></div>
+        <div class="kpi-card"><div class="kpi-num">KPI 19</div><div class="kpi-label">Inscritos total</div><div class="kpi-value" id="k19t">—</div></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="showTab('externos')">← Ajustar</button>
+      <button class="btn btn-pink" onclick="showTab('envio')">Preparar reporte →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANE 4: ENVÍO ══ -->
+<div class="pane" id="pane-envio">
+
+  <div class="card">
+    <div class="card-title">Estado del proceso</div>
+    <ul class="status-list">
+      <li class="status-item"><div class="dot dot-empty" id="dot-bsale"></div><span>Datos Bsale cargados</span><span class="status-val" id="st-bsale">Pendiente</span></li>
+      <li class="status-item"><div class="dot dot-empty" id="dot-ext"></div><span>Fuentes externas</span><span class="status-val" id="st-ext">Pendiente</span></li>
+      <li class="status-item"><div class="dot dot-empty" id="dot-kpi"></div><span>KPIs calculados</span><span class="status-val" id="st-kpi">Pendiente</span></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Generar reporte HTML</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+      Genera el archivo HTML del reporte con los gráficos y tablas. Ábrelo en el navegador, selecciona todo y pégalo en Gmail para enviarlo.
+    </p>
+    <button class="btn btn-pink" onclick="generarReporte()" style="width:100%;">Generar reporte y descargar HTML</button>
+    <div id="reporte-note" style="display:none;margin-top:10px;font-size:12px;color:var(--green);">
+      ✅ Reporte generado — revísalo en el navegador antes de enviarlo
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Instrucciones de envío por Gmail</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+      <strong style="color:var(--text);">1.</strong> Abre el archivo HTML descargado en Chrome o Safari<br>
+      <strong style="color:var(--text);">2.</strong> Presiona <kbd style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:12px;">Cmd+A</kbd> para seleccionar todo<br>
+      <strong style="color:var(--text);">3.</strong> Copia con <kbd style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:12px;">Cmd+C</kbd><br>
+      <strong style="color:var(--text);">4.</strong> En Gmail, compón un correo nuevo y pega con <kbd style="background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:12px;">Cmd+V</kbd><br>
+      <strong style="color:var(--text);">5.</strong> Los gráficos e imágenes quedarán embebidos automáticamente
+    </div>
+  </div>
+
+</div>
+</div><!-- /main -->
+
+<script>
+// ── Estado global ──────────────────────────────────────────
+var state = {
+  bsaleLoaded: false,
+  extFilled:   false,
+  kpiCalc:     false,
+  kpis:        {}
+};
+
+// ── Tabs ───────────────────────────────────────────────────
+function showTab(t) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pane-'+t).classList.add('active');
+  var idx = ['datos','externos','kpis','envio'].indexOf(t);
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  updateStatus();
+}
+
+// ── Semana ─────────────────────────────────────────────────
+function updateWeek() {
+  var v = document.getElementById('fecha-lunes').value;
+  if (!v) return;
+  var d = new Date(v + 'T12:00:00');
+  var fin = new Date(d); fin.setDate(fin.getDate()+6);
+  var opts = {day:'numeric', month:'long'};
+  var label = d.toLocaleDateString('es-CL',opts) + ' al ' + fin.toLocaleDateString('es-CL',opts);
+  document.getElementById('week-display').textContent = label;
+  document.getElementById('week-badge').textContent = label;
+  // Update script command
+  var yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  document.getElementById('cmd-box').childNodes[0].textContent =
+    'python kpi_semanal.py --semana '+yyyy+'-'+mm+'-'+dd+' --mkt-tx 0 --mkt-cli 0';
+}
+
+// Set default to last Monday
+var hoy = new Date();
+var diff = hoy.getDate() - hoy.getDay() - (hoy.getDay()===0?7:0);
+var lunes = new Date(hoy.setDate(diff));
+var y=lunes.getFullYear(), m=String(lunes.getMonth()+1).padStart(2,'0'), d=String(lunes.getDate()).padStart(2,'0');
+document.getElementById('fecha-lunes').value = y+'-'+m+'-'+d;
+updateWeek();
+
+// ── Utilidades ─────────────────────────────────────────────
+function n(id) { return parseFloat(document.getElementById(id).value)||0; }
+function fmt(v) { return Math.round(v).toLocaleString('es-CL'); }
+function fmtClp(v) { return '$'+Math.round(v).toLocaleString('es-CL'); }
+function fmtPct(v) { return (v*100).toFixed(1)+'%'; }
+
+function updateTotals() {
+  var tot = 0;
+  for(var i=1;i<=6;i++) tot += n('ga'+i);
+  document.getElementById('total-ga').textContent = fmt(tot)+' sesiones';
+}
+
+function guardarDatos() {
+  var trafico = 0;
+  for(var i=1;i<=6;i++) trafico += n('ga'+i);
+  var gads = 0, meta = 0, ingreso = 0;
+  for(var i=1;i<=6;i++) { gads+=n('gads'+i); meta+=n('meta'+i); ingreso+=n('ing'+i); }
+  var presup  = gads + meta;
+  var ins_n   = n('ins-nuevos');
+  var ins_ant = n('ins-anterior');
+
+  var payload = {
+    semana_label: document.getElementById('week-badge').textContent.trim(),
+    trafico:      trafico,
+    gads:         gads,
+    meta:         meta,
+    presup:       presup,
+    ingreso:      ingreso,
+    ig_seg:       n('ig-seg'),
+    ins_nuevos:   ins_n,
+    ins_total:    ins_ant + ins_n,
+    tx_web:       state.kpis.tx_web || 0
+  };
+
+  document.getElementById('guardar-confirm').style.display = 'none';
+  document.getElementById('guardar-error').style.display   = 'none';
+
+  try {
+    var blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'datos_manuales.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    document.getElementById('guardar-confirm').style.display = 'block';
+  } catch(e) {
+    document.getElementById('guardar-error').style.display = 'block';
+  }
+}
+
+function copyCmd() {
+  var txt = document.getElementById('cmd-box').childNodes[0].textContent;
+  navigator.clipboard.writeText(txt).then(function(){ alert('Comando copiado!'); });
+}
+
+// ── Archivos ───────────────────────────────────────────────
+function markFile(tipo, inp) {
+  var f = inp.files[0]; if (!f) return;
+  document.getElementById('fname-'+tipo).textContent = f.name;
+  document.getElementById('zone-'+tipo).classList.add('loaded');
+  if (tipo==='bsale') state.bsaleLoaded = true;
+  updateStatus();
+}
+
+function loadJSON(inp) {
+  var f = inp.files[0]; if(!f) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      state.kpis = data;
+      state.bsaleLoaded = true;
+      document.getElementById('fname-json').textContent = f.name + ' — datos cargados ✓';
+      document.getElementById('zone-json').classList.add('loaded');
+      // Pre-fill Marketplace fields if present
+      if (data['03_tx_marketplace']) document.getElementById('mkt-tx').value = data['03_tx_marketplace'];
+      if (data['05_cli_marketplace']) document.getElementById('mkt-cli').value = data['05_cli_marketplace'];
+      updateStatus();
+      alert('JSON cargado correctamente. Ve al paso 2 para ingresar los datos manuales, luego calcula los KPIs.');
+    } catch(err) {
+      alert('Error leyendo el JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(f);
+}
+
+// ── Calcular KPIs ──────────────────────────────────────────
+function calcular() {
+  var trafico = 0;
+  for(var i=1;i<=6;i++) trafico += n('ga'+i);
+
+  var gads = 0, meta = 0, ingreso = 0;
+  for(var i=1;i<=6;i++) { gads+=n('gads'+i); meta+=n('meta'+i); ingreso+=n('ing'+i); }
+
+  var mkt_tx  = n('mkt-tx');
+  var mkt_cli = n('mkt-cli');
+  var ig_seg  = n('ig-seg');
+  var ins_n   = n('ins-nuevos');
+  var ins_ant = n('ins-anterior');
+
+  // Usar datos del preload de Bsale (claves cortas del script Python)
+  var k = state.kpis;
+  var ventas    = k.ventas    || 0;
+  var tx_total  = k.tx_total  || 0;
+  var tx_web    = k.tx_web    || 0;
+  var tx_suc    = k.tx_suc    != null ? k.tx_suc : Math.max(0, tx_total - tx_web - mkt_tx);
+  var cli_total = k.cli_total || 0;
+  var cli_web   = k.cli_web   || 0;
+  var cli_suc   = k.cli_suc   != null ? k.cli_suc : Math.max(0, cli_total - cli_web - mkt_cli);
+  var cli_nuevos = k.cli_nuevos || 0;
+  var pct_nuevos = k.pct_nuevos != null ? k.pct_nuevos : (cli_total > 0 ? cli_nuevos/cli_total : 0);
+  var ltv       = k.ltv    || 0;
+  var ticket    = k.ticket || 0;
+  var tk_bol    = k.tk_bol || 0;
+  var n_bol     = k.n_bol  || 0;
+  var tk_fac    = k.tk_fac || 0;
+  var n_fac     = k.n_fac  || 0;
+  var recompra  = ticket > 0 ? ltv/ticket : 0;
+  var conv      = trafico > 0 ? tx_web/trafico : 0;
+  var presup    = gads + meta;
+  var cac       = tx_web > 0 ? presup/tx_web : 0;
+  var ins_total = ins_ant + ins_n;
+
+  // Guardar en estado
+  state.kpis = Object.assign(state.kpis, {
+    ventas, tx_total, tx_web, tx_suc, mkt_tx, cli_total, cli_web, cli_suc, mkt_cli,
+    cli_nuevos, pct_nuevos, ltv, ticket, tk_bol, n_bol, tk_fac, n_fac, recompra,
+    conv, presup, cac, ingreso, trafico, ig_seg, ins_n, ins_total,
+    gads, meta
+  });
+  state.kpiCalc = true;
+  state.extFilled = true;
+
+  // Mostrar
+  document.getElementById('k01').textContent = fmtClp(ventas);
+  document.getElementById('k02').textContent = fmt(tx_total);
+  document.getElementById('k13').textContent = fmtClp(ticket);
+  document.getElementById('k12').textContent = fmtClp(ltv);
+  document.getElementById('k15').textContent = fmt(n_bol);
+  document.getElementById('k14').textContent = fmtClp(tk_bol);
+  document.getElementById('k17').textContent = fmt(n_fac);
+  document.getElementById('k16').textContent = fmtClp(tk_fac);
+  document.getElementById('k03w').textContent = fmt(tx_web);
+  document.getElementById('k03m').textContent = fmt(mkt_tx);
+  document.getElementById('k03s').textContent = fmt(tx_suc);
+  document.getElementById('k04').textContent  = fmt(cli_total);
+  document.getElementById('k05w').textContent = fmt(cli_web);
+  document.getElementById('k05m').textContent = fmt(mkt_cli);
+  document.getElementById('k05s').textContent = fmt(cli_suc);
+  document.getElementById('k10').textContent  = fmt(cli_nuevos);
+  document.getElementById('k11').textContent  = fmtPct(pct_nuevos);
+  document.getElementById('k20').textContent  = recompra.toFixed(2)+'x';
+  document.getElementById('k06').textContent  = trafico > 0 ? fmtPct(conv) : '—';
+  document.getElementById('k07').textContent  = cac > 0 ? fmtClp(cac) : '—';
+  document.getElementById('k08').textContent  = fmtClp(presup);
+  document.getElementById('k09').textContent  = fmtClp(ingreso);
+  document.getElementById('k18').textContent  = fmt(ig_seg);
+  document.getElementById('k19n').textContent = fmt(ins_n);
+  document.getElementById('k19t').textContent = fmt(ins_total);
+
+  document.getElementById('kpi-empty').style.display = 'none';
+  document.getElementById('kpi-results').style.display = 'block';
+
+  updateStatus();
+  showTab('kpis');
+}
+
+// ── Status ─────────────────────────────────────────────────
+function updateStatus() {
+  function setDot(id, sid, ok, label) {
+    var d = document.getElementById(id), s = document.getElementById(sid);
+    if(d) d.className = 'dot '+(ok?'dot-ok':'dot-empty');
+    if(s) s.textContent = label;
+  }
+  setDot('dot-bsale','st-bsale', state.bsaleLoaded, state.bsaleLoaded?'Listo':'Pendiente');
+  setDot('dot-ext',  'st-ext',   state.extFilled,   state.extFilled?'Ingresado':'Pendiente');
+  setDot('dot-kpi',  'st-kpi',   state.kpiCalc,     state.kpiCalc?'Calculados':'Pendiente');
+}
+
+// ── Generar reporte ────────────────────────────────────────
+function generarReporte() {
+  if (!state.kpiCalc) { alert('Primero calcula los KPIs en el paso anterior.'); return; }
+  var k = state.kpis;
+  var semana = document.getElementById('week-badge').textContent;
+
+  // Generar HTML del reporte (formato definido como estándar)
+  var html = generarHTMLReporte(k, semana);
+
+  // Descargar
+  var blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'reporte_kpi_seducete_' + new Date().toISOString().slice(0,10) + '.html';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  document.getElementById('reporte-note').style.display = 'block';
+}
+
+function generarHTMLReporte(k, semana) {
+  function row(kpiNum, label, v1, v2, v3, v4, delta, upDown) {
+    var bg = arguments.length%2===0 ? '#f9f9f7' : '#ffffff';
+    var dcolor = upDown==='up'?'#1e7e34': upDown==='dn'?'#b02020':'#888';
+    var arrow  = upDown==='up'?'&#9650; ': upDown==='dn'?'&#9660; ':'';
+    return '<tr style="background:'+bg+'">'+
+      '<td style="padding:9px 10px;color:#bbb;font-size:10px;border-bottom:1px solid #eeeeeb;">'+kpiNum+'</td>'+
+      '<td style="padding:9px 10px;color:#1a1a1a;border-bottom:1px solid #eeeeeb;">'+label+'</td>'+
+      '<td style="padding:9px 10px;text-align:right;color:#555;border-bottom:1px solid #eeeeeb;">'+v1+'</td>'+
+      '<td style="padding:9px 10px;text-align:right;color:#555;border-bottom:1px solid #eeeeeb;">'+v2+'</td>'+
+      '<td style="padding:9px 10px;text-align:right;color:#555;border-bottom:1px solid #eeeeeb;">'+v3+'</td>'+
+      '<td style="padding:9px 10px;text-align:right;font-weight:700;color:#1a1a1a;border-bottom:1px solid #eeeeeb;">'+v4+'</td>'+
+      '<td style="padding:9px 10px;text-align:right;font-weight:700;color:'+dcolor+';border-bottom:1px solid #eeeeeb;">'+arrow+delta+'</td>'+
+    '</tr>';
+  }
+  function thead() {
+    return '<tr style="background:#FF99FF;">'+
+      '<td style="padding:9px 10px;color:#7a007a;font-size:10px;font-weight:600;width:36px;">#</td>'+
+      '<td style="padding:9px 10px;color:#1a1a1a;font-weight:600;">KPI</td>'+
+      '<td style="padding:9px 10px;color:#7a007a;text-align:right;font-size:11px;">09–15 Mar</td>'+
+      '<td style="padding:9px 10px;color:#7a007a;text-align:right;font-size:11px;">16–22 Mar</td>'+
+      '<td style="padding:9px 10px;color:#7a007a;text-align:right;font-size:11px;">23–29 Mar</td>'+
+      '<td style="padding:9px 10px;color:#1a1a1a;text-align:right;font-weight:700;">'+semana+'</td>'+
+      '<td style="padding:9px 10px;color:#7a007a;text-align:right;font-size:11px;">&#916; sem</td>'+
+    '</tr>';
+  }
+  function section(title, rows) {
+    return '<div style="background:#ffffff;padding:20px 28px 4px;border-left:1px solid #e0e0e0;border-right:1px solid #e0e0e0;margin-top:2px;">'+
+      '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #FF99FF;">'+title+'</div>'+
+      '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:12px;">'+thead()+rows+'</table></div>';
+  }
+
+  var clpFmt = function(v){ return '$'+Math.round(v).toLocaleString('es-CL'); };
+  var numFmt = function(v){ return Math.round(v).toLocaleString('es-CL'); };
+  var pctFmt = function(v){ return (v*100).toFixed(1)+'%'; };
+
+  // Insight generado dinámicamente
+  var insights = '';
+  if (k.ventas > 0) insights += '<div style="background:#f0faf4;border-left:4px solid #1e7e34;padding:10px 14px;border-radius:0 5px 5px 0;font-size:12px;color:#1a1a1a;line-height:1.5;margin-bottom:8px;"><strong>Ventas:</strong> '+clpFmt(k.ventas)+' · '+numFmt(k.tx_total)+' transacciones · Ticket promedio '+clpFmt(k.ticket)+'</div>';
+  if (k.cac > 5500) insights += '<div style="background:#fdf3f3;border-left:4px solid #b02020;padding:10px 14px;border-radius:0 5px 5px 0;font-size:12px;color:#1a1a1a;line-height:1.5;margin-bottom:8px;"><strong>CAC web alto:</strong> '+clpFmt(k.cac)+' por cliente adquirido. Revisar eficiencia de campañas.</div>';
+  if (k.conv > 0 && k.conv < 0.015) insights += '<div style="background:#fdf3f3;border-left:4px solid #b02020;padding:10px 14px;border-radius:0 5px 5px 0;font-size:12px;color:#1a1a1a;line-height:1.5;margin-bottom:8px;"><strong>Conversión web baja:</strong> '+pctFmt(k.conv)+'. Analizar tráfico y landing pages.</div>';
+  insights += '<div style="background:#f7f6f2;border-left:4px solid #888;padding:10px 14px;border-radius:0 5px 5px 0;font-size:12px;color:#1a1a1a;line-height:1.5;margin-bottom:8px;"><strong>Clientes:</strong> '+numFmt(k.cli_total)+' únicos · '+numFmt(k.cli_nuevos)+' nuevos ('+pctFmt(k.pct_nuevos)+') · LTV '+clpFmt(k.ltv)+' · Recompra '+k.recompra.toFixed(2)+'x</div>';
+
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background-color:#f2f2f0;font-family:Arial,Helvetica,sans-serif;">'+
+  '<div style="max-width:700px;margin:0 auto;padding:24px 16px;">'+
+  '<div style="background:#FF99FF;border-radius:8px 8px 0 0;padding:20px 28px;">'+
+    '<div style="color:#1a1a1a;font-size:20px;font-weight:700;">Reporte KPI Semanal — Sedúcete</div>'+
+    '<div style="color:#7a007a;font-size:12px;margin-top:4px;">Semana '+semana+' &nbsp;·&nbsp; Generado el '+new Date().toLocaleDateString('es-CL')+'</div>'+
+  '</div>'+
+  '<div style="background:#ffffff;padding:20px 28px;border-left:1px solid #e0e0e0;border-right:1px solid #e0e0e0;">'+
+    '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:12px;">Insights principales</div>'+
+    insights+
+  '</div>'+
+  section('Ventas y transacciones',
+    row('KPI 1','Ventas totales','$109.549.467','$97.589.329','$94.953.718',clpFmt(k.ventas||0),'—','neu')+
+    row('KPI 2','Transacciones totales','3.065','2.649','3.073',numFmt(k.tx_total||0),'—','neu')+
+    row('KPI 13','Ticket promedio global','$36.591','$37.849','$31.830',clpFmt(k.ticket||0),'—','neu')+
+    row('KPI 14','Ticket boletas','$27.389','$28.115','$26.844',clpFmt(k.tk_bol||0),'—','neu')+
+    row('KPI 15','N° boletas','2.860','2.460','2.896',numFmt(k.n_bol||0),'—','neu')+
+    row('KPI 16','Ticket facturas','$164.972','$164.548','$113.413',clpFmt(k.tk_fac||0),'—','neu')+
+    row('KPI 17','N° facturas','205','189','177',numFmt(k.n_fac||0),'—','neu')
+  )+
+  section('Canales — Transacciones y clientes',
+    '<tr style="background:#eeeeeb;"><td colspan="7" style="padding:6px 10px;font-size:10px;font-weight:700;color:#666;text-transform:uppercase;">Transacciones</td></tr>'+
+    row('KPI 3','Web','714','657','860',numFmt(k.tx_web||0),'—','neu')+
+    row('KPI 3','Marketplace','186','209','223',numFmt(k.mkt_tx||0),'—','neu')+
+    row('KPI 3','Sucursales','2.165','1.783','1.990',numFmt(k.tx_suc||0),'—','neu')+
+    '<tr style="background:#eeeeeb;"><td colspan="7" style="padding:6px 10px;font-size:10px;font-weight:700;color:#666;text-transform:uppercase;">Clientes</td></tr>'+
+    row('KPI 4','Clientes totales','2.453','2.135','2.424',numFmt(k.cli_total||0),'—','neu')+
+    row('KPI 5','Web','693','636','840',numFmt(k.cli_web||0),'—','neu')+
+    row('KPI 5','Marketplace','171','187','196',numFmt(k.mkt_cli||0),'—','neu')+
+    row('KPI 5','Sucursales','1.589','1.312','1.388',numFmt(k.cli_suc||0),'—','neu')
+  )+
+  section('Clientes — Retención y LTV',
+    row('KPI 10','Clientes nuevos','763','732','836',numFmt(k.cli_nuevos||0),'—','neu')+
+    row('KPI 11','% Clientes nuevos','31,1%','34,3%','34,5%',pctFmt(k.pct_nuevos||0),'—','neu')+
+    row('KPI 12','LTV semanal','$648.640','$627.562','$549.239',clpFmt(k.ltv||0),'—','neu')+
+    row('KPI 20','Recompra estimada','17,73x','16,58x','17,26x',(k.recompra||0).toFixed(2)+'x','—','neu')
+  )+
+  section('Web y publicidad digital',
+    row('KPI 6','Conversión web','2,14%','2,14%','2,32%',k.trafico>0?pctFmt(k.conv||0):'—','—','neu')+
+    row('KPI 7','CAC web','$5.041','$5.329','$4.184',k.cac>0?clpFmt(k.cac):'—','—','neu')+
+    row('KPI 8','Presupuesto Ads (Google + Meta)','$3.598.933','$3.500.849','$3.514.624',clpFmt(k.presup||0),'—','neu')+
+    row('KPI 9','Ingreso directo web','5.176','4.310','5.801',numFmt(k.ingreso||0),'—','neu')
+  )+
+  section('Comunidad y suscriptores',
+    row('KPI 18','Seguidores Instagram @seducete.cl','226','227','227',numFmt(k.ig_seg||0),'—','neu')+
+    row('KPI 19','Inscritos nuevos','86','76','38',numFmt(k.ins_n||0),'—','neu')+
+    row('KPI 19','Inscritos totales acumulados','52.168','52.158','52.196',numFmt(k.ins_total||0),'—','neu')
+  )+
+  '<div style="padding:14px 4px;font-size:10px;color:#aaa;line-height:1.6;border-radius:0 0 8px 8px;">'+
+    'Sistema KPIs Semanales Sedúcete &nbsp;·&nbsp; Generado el '+new Date().toLocaleDateString('es-CL')+'<br>'+
+    'Ventas y clientes: Bsale &nbsp;·&nbsp; Tráfico: Google Analytics &nbsp;·&nbsp; Ads: Google Ads + Meta'+
+  '</div>'+
+  '</div></body></html>';
+}
+</script>
+<script>
+// Datos precargados por GitHub Actions — 27 al 3 de Mayo
+window.BSALE_PRELOAD = {"ventas": 85396475.0, "tx_total": 2631, "tx_web": 92, "mkt_tx": 0, "tx_suc": 2539, "cli_total": 2082, "cli_web": 84, "mkt_cli": 0, "cli_suc": 1998, "cli_nuevos": 0, "pct_nuevos": 0.0, "ltv": 0.0, "ticket": 32458.0, "tk_bol": 23842.0, "n_bol": 2515, "tk_fac": 236574.0, "n_fac": 116, "recompra": 0.0, "semana_label": "27 al 3 de Mayo", "lunes": "2026-04-27", "domingo": "2026-05-03"};
+(function() {
+  function precargar() {
+    var k = window.BSALE_PRELOAD;
+    if (!k) return;
+
+    if (k.lunes) {
+      var inp = document.getElementById('fecha-lunes');
+      if (inp) { inp.value = k.lunes; if (typeof updateWeek === 'function') updateWeek(); }
+    }
+    if (k.semana_label) {
+      var badge = document.getElementById('week-badge');
+      if (badge) badge.textContent = k.semana_label;
+    }
+
+    window.state = window.state || {};
+    window.state.kpis = k;
+    window.state.bsaleLoaded = true;
+
+    var banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;'
+      + 'background:#1e7e34;color:#fff;padding:12px 24px;font-size:13px;'
+      + 'font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:space-between;';
+    banner.innerHTML = '<span>&#x2705; <strong>Datos Bsale cargados</strong> &mdash; '
+      + (k.semana_label || '') + ' &middot; Ventas: $'
+      + Math.round(k.ventas || 0).toLocaleString('es-CL') + '</span>'
+      + '<button onclick="this.parentElement.remove()" '
+      + 'style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>';
+    document.body.prepend(banner);
+    setTimeout(function() { if (banner.parentElement) banner.remove(); }, 8000);
+
+    if (typeof showTab === 'function') showTab('externos');
+    if (typeof updateStatus === 'function') updateStatus();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', precargar);
+  } else {
+    setTimeout(precargar, 100);
+  }
+})();
+</script>
+</body>
+</html>
