@@ -122,16 +122,71 @@
     .app-header { padding: 16px 16px; }
     .tabs { padding: 0 12px; overflow-x: auto; }
   }
+
+  /* LOGIN OVERLAY */
+  #login-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    z-index: 9999; display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  #login-overlay.hidden { display: none; }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 40px 36px; width: 100%; max-width: 380px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  .login-logo {
+    background: var(--pink); border-radius: 8px; padding: 14px 20px;
+    margin-bottom: 28px; text-align: center;
+  }
+  .login-logo .brand { font-size: 22px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.3px; }
+  .login-logo .brand-sub { font-size: 11px; color: var(--pink-dark); margin-top: 2px; }
+  .login-box h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+  .login-box .login-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .login-box label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; }
+  .login-box input[type=password] {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; color: var(--text); background: var(--surface); outline: none;
+    transition: border 0.15s; margin-bottom: 12px;
+  }
+  .login-box input[type=password]:focus { border-color: var(--pink-dark); }
+  .login-error { color: var(--red); font-size: 12px; margin-top: 8px; display: none; }
+  .login-error.visible { display: block; }
+  /* LOGOUT BTN */
+  .btn-logout {
+    background: none; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px;
+    padding: 5px 12px; font-size: 12px; color: #555; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-logout:hover { background: rgba(0,0,0,0.08); color: #1a1a1a; }
 </style>
 </head>
 <body>
+
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand">Sedúcete</div>
+      <div class="brand-sub">Dashboard KPI Semanal</div>
+    </div>
+    <h2>Iniciar sesión</h2>
+    <p class="login-sub">Acceso restringido — ingresa tu contraseña</p>
+    <label for="pwd-input">Contraseña</label>
+    <input type="password" id="pwd-input" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn btn-pink" style="width:100%" onclick="doLogin()" id="login-btn">Ingresar</button>
+    <div class="login-error" id="login-error">Contraseña incorrecta. Intenta de nuevo.</div>
+  </div>
+</div>
 
 <div class="app-header">
   <div>
     <h1>KPI Semanal — Sedúcete</h1>
     <div class="subtitle">Dashboard de cálculo y envío de reporte semanal</div>
   </div>
-  <div class="week-badge" id="week-badge">—</div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="week-badge" id="week-badge">—</div>
+    <button class="btn-logout" onclick="cerrarSesion()" title="Cerrar sesión">Cerrar sesión</button>
+  </div>
 </div>
 
 <div class="tabs">
@@ -760,50 +815,135 @@ function generarHTMLReporte(k, semana) {
   '</div>'+
   '</div></body></html>';
 }
+
+// === PROTECCIÓN CON CONTRASEÑA ===
+// Hash SHA-256 de "Seducete2026" — cambiar aquí si se actualiza la clave
+var PWD_HASH = 'd681eb4ee8495fd01e9a43821c8f5ac3973c9f4d83888d0758ea088eb703aad3';
+
+async function sha256(str) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
+async function decryptKPIs(password) {
+  var enc = window.ENCRYPTED_KPIS;
+  if (!enc) return null;
+  var salt = Uint8Array.from(atob(enc.salt), function(c){ return c.charCodeAt(0); });
+  var iv   = Uint8Array.from(atob(enc.iv),   function(c){ return c.charCodeAt(0); });
+  var ct   = Uint8Array.from(atob(enc.ct),   function(c){ return c.charCodeAt(0); });
+  var baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  var key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+    baseKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+  );
+  var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
+async function doLogin() {
+  var pwd = document.getElementById('pwd-input').value;
+  if (!pwd) return;
+  var btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+
+  var hash = await sha256(pwd);
+  if (hash !== PWD_HASH) {
+    document.getElementById('login-error').classList.add('visible');
+    document.getElementById('pwd-input').select();
+    btn.disabled = false;
+    btn.textContent = 'Ingresar';
+    return;
+  }
+
+  // Contraseña correcta — descifrar datos si existen (versión desplegada)
+  if (window.ENCRYPTED_KPIS) {
+    try {
+      var data = await decryptKPIs(pwd);
+      localStorage.setItem('kpi_data', JSON.stringify(data));
+      if (window.precargarDatos) window.precargarDatos(data);
+    } catch(e) {
+      console.warn('No se pudo descifrar KPIs:', e);
+    }
+  }
+
+  localStorage.setItem('kpi_auth', '1');
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('pwd-input').value = '';
+}
+
+function cerrarSesion() {
+  localStorage.removeItem('kpi_auth');
+  localStorage.removeItem('kpi_data');
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('pwd-input').value = '';
+  document.getElementById('login-error').classList.remove('visible');
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').textContent = 'Ingresar';
+  setTimeout(function(){ document.getElementById('pwd-input').focus(); }, 100);
+}
+
+document.getElementById('pwd-input').addEventListener('keydown', function(e) {
+  document.getElementById('login-error').classList.remove('visible');
+  if (e.key === 'Enter') doLogin();
+});
+
+// Verificar auth al cargar — esperar a que todos los scripts inline terminen
+document.addEventListener('DOMContentLoaded', function() {
+  var auth = localStorage.getItem('kpi_auth');
+  var raw  = localStorage.getItem('kpi_data');
+
+  if (auth === '1') {
+    document.getElementById('login-overlay').classList.add('hidden');
+    if (raw && window.ENCRYPTED_KPIS) {
+      // Datos ya descifrados en sesión anterior
+      setTimeout(function() {
+        if (window.precargarDatos) try { window.precargarDatos(JSON.parse(raw)); } catch(e) {}
+      }, 100);
+    }
+  } else {
+    setTimeout(function(){ document.getElementById('pwd-input').focus(); }, 100);
+  }
+});
 </script>
 <script>
-// Datos precargados por GitHub Actions — 27 al 3 de Mayo
-window.BSALE_PRELOAD = {"ventas": 85396475.0, "tx_total": 2631, "tx_web": 92, "mkt_tx": 0, "tx_suc": 2539, "cli_total": 2082, "cli_web": 84, "mkt_cli": 0, "cli_suc": 1998, "cli_nuevos": 0, "pct_nuevos": 0.0, "ltv": 0.0, "ticket": 32458.0, "tk_bol": 23842.0, "n_bol": 2515, "tk_fac": 236574.0, "n_fac": 116, "recompra": 0.0, "semana_label": "27 al 3 de Mayo", "lunes": "2026-04-27", "domingo": "2026-05-03"};
-(function() {
-  function precargar() {
-    var k = window.BSALE_PRELOAD;
-    if (!k) return;
+// Datos cifrados por GitHub Actions — 27 al 3 de Mayo
+// Cifrado: AES-256-GCM con clave derivada por PBKDF2-SHA256 (100 000 iteraciones)
+// No hay datos legibles aquí — se descifran en el navegador solo con la contraseña correcta
+window.ENCRYPTED_KPIS = {"salt": "+SgBJZo302R7r7qSV/5DMw==", "iv": "5A3I38xCYeAJtoTb", "ct": "iR/N+E4z2WAY0exG3y7W0Y6OK/9Zkrw//gCqP/WtTHTV6/sE5OaXpSql5HdRXHkjJA7Rgzv3VGcvIC9r+dlG4IPCPqaqTRrmCdkhl+PMbRU1HnaSolg+TuTGf+BJj7+f45lG0QPh2EBGfZfTcyk26xkDv+Vlwe0EOHBkcZDR7M7rIIh9PV1REThm6loYjw3OctrVcB1s7Q6moOgZhv8cbR1e8sQOvRX4lhdjBcM6yZABKSW69bDSl4iAg/HhOcK3gTZGqWIvH6Z6qT/ZkQOWxQwymmkaefn2htiAKNhbtlsmx2bpaUFV7eK0DiMmjea8ABllPf8gQcoWE8tWIeyR+Er700v0ZQkY0TEqkf22lzTp6IrV/rNh8IUKqapdhrMuS5khFhW3NuKBGtzStyMiX1Fj2OdzhWtKb3DMb8WxQbzoYGtD+zyGVVsIKl8IHzMob/a0sevtchHzHBi0SDHPzVqgHRO9KX800+9u3mmrC5RMwM5gSZoBWnFaJyqqfYcNFMmkS+fYi2vUjZrQQGyBLis="};
+window._kpiLabel = "27 al 3 de Mayo";
 
-    if (k.lunes) {
-      var inp = document.getElementById('fecha-lunes');
-      if (inp) { inp.value = k.lunes; if (typeof updateWeek === 'function') updateWeek(); }
-    }
-    if (k.semana_label) {
-      var badge = document.getElementById('week-badge');
-      if (badge) badge.textContent = k.semana_label;
-    }
+window.precargarDatos = function(k) {
+  if (!k) return;
 
-    window.state = window.state || {};
-    window.state.kpis = k;
-    window.state.bsaleLoaded = true;
-
-    var banner = document.createElement('div');
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;'
-      + 'background:#1e7e34;color:#fff;padding:12px 24px;font-size:13px;'
-      + 'font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:space-between;';
-    banner.innerHTML = '<span>&#x2705; <strong>Datos Bsale cargados</strong> &mdash; '
-      + (k.semana_label || '') + ' &middot; Ventas: $'
-      + Math.round(k.ventas || 0).toLocaleString('es-CL') + '</span>'
-      + '<button onclick="this.parentElement.remove()" '
-      + 'style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>';
-    document.body.prepend(banner);
-    setTimeout(function() { if (banner.parentElement) banner.remove(); }, 8000);
-
-    if (typeof showTab === 'function') showTab('externos');
-    if (typeof updateStatus === 'function') updateStatus();
+  if (k.lunes) {
+    var inp = document.getElementById('fecha-lunes');
+    if (inp) { inp.value = k.lunes; if (typeof updateWeek === 'function') updateWeek(); }
+  }
+  if (k.semana_label) {
+    var badge = document.getElementById('week-badge');
+    if (badge) badge.textContent = k.semana_label;
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', precargar);
-  } else {
-    setTimeout(precargar, 100);
-  }
-})();
+  window.state = window.state || {};
+  window.state.kpis = k;
+  window.state.bsaleLoaded = true;
+
+  var banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:8000;'
+    + 'background:#1e7e34;color:#fff;padding:12px 24px;font-size:13px;'
+    + 'font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:space-between;';
+  banner.innerHTML = '<span>&#x2705; <strong>Datos Bsale cargados</strong> &mdash; '
+    + (k.semana_label || '') + ' &middot; Ventas: $'
+    + Math.round(k.ventas || 0).toLocaleString('es-CL') + '</span>'
+    + '<button onclick="this.parentElement.remove()" '
+    + 'style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">&times;</button>';
+  document.body.prepend(banner);
+  setTimeout(function() { if (banner.parentElement) banner.remove(); }, 8000);
+
+  if (typeof showTab === 'function') showTab('externos');
+  if (typeof updateStatus === 'function') updateStatus();
+};
 </script>
 </body>
 </html>
