@@ -894,9 +894,24 @@ document.addEventListener('DOMContentLoaded', function() {
   var raw  = localStorage.getItem('kpi_data');
 
   if (auth === '1') {
+    // Si los datos del localStorage son de otra semana, forzar re-login
+    if (raw && window._kpiLabel) {
+      try {
+        var cached = JSON.parse(raw);
+        if (cached.semana_label !== window._kpiLabel) {
+          localStorage.removeItem('kpi_auth');
+          localStorage.removeItem('kpi_data');
+          setTimeout(function(){ document.getElementById('pwd-input').focus(); }, 100);
+          return;
+        }
+      } catch(e) {
+        localStorage.removeItem('kpi_auth');
+        localStorage.removeItem('kpi_data');
+      }
+    }
     document.getElementById('login-overlay').classList.add('hidden');
     if (raw && window.ENCRYPTED_KPIS) {
-      // Datos ya descifrados en sesión anterior
+      // Datos ya descifrados en sesión anterior (misma semana)
       setTimeout(function() {
         if (window.precargarDatos) try { window.precargarDatos(JSON.parse(raw)); } catch(e) {}
       }, 100);
@@ -910,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Datos cifrados por GitHub Actions — 4 al 10 de Mayo
 // Cifrado: AES-256-GCM con clave derivada por PBKDF2-SHA256 (100 000 iteraciones)
 // No hay datos legibles aquí — se descifran en el navegador solo con la contraseña correcta
-window.ENCRYPTED_KPIS = {"salt": "pjKf348pU75oN3Hwfe3xNA==", "iv": "N5j5s6TEwHl+LSdW", "ct": "z7mctZ8EWL15CQHqme68AxAOLWof2q+dnVcBkyPDvtdF7rV2EqOTRImmxGTmClCejdDksskEqk1LrfsYLQS4ob2noylzwFGc+sB/sDNx6J8Ny9pfNCJmgJFRPYXM1csPabPmDCOsI7fYQ5C1IfTtJZjkFt+v5iJwIBWNomzMAY12kcL2ZWCkrcH41wNYF+3KiZcJDPlZcSUANlXDjtbKgzKRQAZTPUQo+NyVyvMw1S247ayRUuwzPWQu/6i5aUh/7R8H6N1e6AKoTGp1+lqNxSpNgrumhN3dr/l4E/4WULIZGcvFn5PexchMs0bU2TbkJecowhs7CFwwquzmjvI7FAbCIcmQZmttB82GlJe3GR4+GdzCAHPd8mdfZr+iluID+WwkpeppMZxNo+8ublMx5ZJDMOXxQczzmElrbKy8Cs0Ku4xFxjt1LiG+XB/0bCjXh8Vn86qBJAfk1QzLxKHez4xbdieqqjrCeXsX35jjjubaUjla7tWs395oodi3IexQSvrod23puE6eKNVU+YIKn+TAzZfhAzWY3/C/3HaW8Q=="};
+window.ENCRYPTED_KPIS = {"salt": "0dsaCJj2DJM3guRQqW5G7w==", "iv": "lpyIyIO4IjJSSyTG", "ct": "Jr5foM0/qTEZaEY413cEUu4wEK1VMCCTUA45nLoF8rOIsT50thGlrqrqhf24+H9Sn1Cj588xubDx1NrnlIL7+3CBxxUAyuMehO1fbElymCmQh74MAcMA1pJTeD+GwBm3QxpRqQXKlcCLWuVHoYSfDce/64Nv35Np8gzX5qIwCXa0rmLXjI6GsPEQnKCs36ZEn8oHDs9x9yzLh3Q7vMtRkTmKNBu5LWczWq8l2qwgeK9xK/4UCa+GiQViqKkAntLSH56h5vGj9/dIMHJ2NpKljBn6n0KZUTw1c0P4JCPrMjTV3qGV/ySFwAIbk+Md0ivQPGskNOqVre2KerVlQwbmUppodGpOvpg0ROrNjJ0MIVdaxH/RPYJVwgEm3PJiaR3dv3v7Cr1yxPauGPHR5+lKCAAENpENbXkfjQIYOFSVqrS6J9zM7vkjAJy7YFUE+/xnwErjFbntYe7OjH1H3rikjR5JlcY0ogVCycJka2W9yXHi9R6L3wK9PHOuKIrIUIGkCwMDmeJOPMz3Y2SfkiRtl+EOOFP1OWMEjiqQSorSlA=="};
 window._kpiLabel = "4 al 10 de Mayo";
 
 window.precargarDatos = function(k) {
