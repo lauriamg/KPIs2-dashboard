@@ -538,7 +538,7 @@ function guardarDatos() {
   var ins_ant = n('ins-anterior');
 
   var payload = {
-    semana_label: document.getElementById('week-badge').textContent.trim(),
+    semana_label: (window._kpiLabel || document.getElementById('week-badge').textContent).trim(),
     trafico:      trafico,
     gads:         gads,
     meta:         meta,
@@ -922,11 +922,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-// Datos cifrados por GitHub Actions — 4 al 10 de Mayo
+// Datos cifrados por GitHub Actions — 11 al 17 de Mayo
 // Cifrado: AES-256-GCM con clave derivada por PBKDF2-SHA256 (100 000 iteraciones)
 // No hay datos legibles aquí — se descifran en el navegador solo con la contraseña correcta
-window.ENCRYPTED_KPIS = {"salt": "0dsaCJj2DJM3guRQqW5G7w==", "iv": "lpyIyIO4IjJSSyTG", "ct": "Jr5foM0/qTEZaEY413cEUu4wEK1VMCCTUA45nLoF8rOIsT50thGlrqrqhf24+H9Sn1Cj588xubDx1NrnlIL7+3CBxxUAyuMehO1fbElymCmQh74MAcMA1pJTeD+GwBm3QxpRqQXKlcCLWuVHoYSfDce/64Nv35Np8gzX5qIwCXa0rmLXjI6GsPEQnKCs36ZEn8oHDs9x9yzLh3Q7vMtRkTmKNBu5LWczWq8l2qwgeK9xK/4UCa+GiQViqKkAntLSH56h5vGj9/dIMHJ2NpKljBn6n0KZUTw1c0P4JCPrMjTV3qGV/ySFwAIbk+Md0ivQPGskNOqVre2KerVlQwbmUppodGpOvpg0ROrNjJ0MIVdaxH/RPYJVwgEm3PJiaR3dv3v7Cr1yxPauGPHR5+lKCAAENpENbXkfjQIYOFSVqrS6J9zM7vkjAJy7YFUE+/xnwErjFbntYe7OjH1H3rikjR5JlcY0ogVCycJka2W9yXHi9R6L3wK9PHOuKIrIUIGkCwMDmeJOPMz3Y2SfkiRtl+EOOFP1OWMEjiqQSorSlA=="};
-window._kpiLabel = "4 al 10 de Mayo";
+window.ENCRYPTED_KPIS = {"salt": "diYGqnvg/7YKKypl/fFxMA==", "iv": "pUe3hJ73w2D1Oz17", "ct": "Dj838LsHNHuHHNKB/RnNbEhVO3VfeRw4XdsY8hwTCE36f3fDNlYxztePU+mHTd3wv9ZGQPd7QKAPn0CH7kzhPyyZ1iJ/h76D6Mv0X5ynRpIRGSTgsjVHOki0Ar0x7PKvmqmpvP89Pmq7Rg9Mk4Tz5qHo+AG+XMLQmtAKmhO7Tj1zYap8qAena4uJimsW8CSbUyiu5qdbGLFwlMIBFZtaVqHTV7I61SlQ2ZoDaKomU5ose0oP200UVz7PUYF6SHvmc2V557q4v/7rxf9RZINBymEH2XgUoSypPjnJo/6oswIiiNGO/jhwHI6JQ/7qh7LwXrJ7IjemG4JU6Bk+U/wGB5gw6nZX43cRTw2mpyLSGwRRG8jUeHGhIk+gFzCPjyL333NW2HVT5/pvmcghI1MCvOtpXHt6KkEmw+1yG8enRu11KAHieqYHqMLkisMROyMFDrP31hDQURC+nI/cBx4g7Mlibn5RkQmcRHKNvvqJTmupfPY8qxMhcp920zfXLFggCf3N6LnCCTLiTdMf6d5p0Gj/GTWi7Rge6ALWSDB00603bPadq2u3SKMlIfQ25o4qb12ZY63xg8uD5FAPpIK9hS/3X/XUrc01D8LZRSFqGD+ntiI/4Uc8GFFdYPgedYrdSQHxAkn76x9yXYva0ayiJ5iV0rd0jP/JbGP+JtJHPd6Q+2qV9ZaT2/RBZCrXaE1jHQy5hG/l2f5u4SZb3UFXP0VH1YxrDxtAmSJmn32PnOChTvojR1R0bwGwo61znpS//u8FPto+Tn/bxSw+p21N4Np1SQBv0CH0mp1Yq1FymYt7fTrEJ2mEc9EbSp3de401Bkwh5TlN4g=="};
+window._kpiLabel = "11 al 17 de Mayo";
 
 window.precargarDatos = function(k) {
   if (!k) return;
